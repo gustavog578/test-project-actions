@@ -30,44 +30,48 @@ async function getFileContent(filePath) {
 async function getAutomatedRoutes(changedFiles) {
     console.log('Detecting routes affected by changes...');
 
-    // In a real Angular project, we would read app-routing.module.ts
-    // For now, we'll provide the context of our current structure
-    const context = `
-    Project Structure:
-    - /public/index.html: Login page
-    - /public/dashboard.html: Main dashboard (protected)
-    - /public/app.js: Routing logic (handles / and /dashboard.html)
-    
-    Changed Files: ${changedFiles.join(', ')}
-    `;
-
+    // Simplificamos: enviamos la lista de archivos y pedimos a la IA que deduzca la ruta pública.
     const prompt = `
-    Eres experto en desarrollo web.
-    Dado el siguiente contexto de archivos modificados y la estructura del proyecto, determina qué rutas públicas se ven afectadas y deben ser testeadas/capturadas.
+    Eres un experto en desarrollo web y automatización con Playwright.
     
-    Contexto:
-    ${context}
+    Estructura del Proyecto:
+    - /public/index.html: Página de Login.
+    - /public/dashboard.html: Panel de control (Dashboard) - Requiere login previo.
+    - /public/app.js: Lógica cliente y navegación.
     
-    Devuelve únicamente JSON válido con el formato:
+    Archivos que han cambiado en este commit:
+    ${changedFiles.join(', ')}
+    
+    Tu tarea es determinar qué rutas de la aplicación deben ser capturadas para mostrar los cambios. 
+    Ten en cuenta que:
+    1. Si cambia algo en 'dashboard.html', la ruta es '/dashboard.html'.
+    2. Si cambia algo en 'index.html', la ruta es '/index.html'.
+    3. Si cambian archivos de lógica (js), CSS o el servidor, asume que tanto '/index.html' como '/dashboard.html' podrían verse afectados.
+    4. La URL base es ${BASE_URL}.
+    
+    Devuelve únicamente un JSON válido con este formato:
     {
-      "routes": ["/index.html", "/dashboard.html"]
+      "routes": ["/ruta1", "/ruta2"]
     }
     
-    No agregues texto adicional. No expliques nada. No incluyas markdown.
+    No incluyas explicaciones, solo el JSON.
+
+    Ten en cuenta que el texto desde presentarse a un cliente para informarle los cambios. Se profesional, breve y conciso
     `;
 
     try {
         const response = await openai.chat.completions.create({
             model: "gpt-4o",
-            messages: [{ role: "user", content: prompt }],
+            messages: [{ role: "system", content: "Eres un asistente técnico que solo responde en JSON." }, { role: "user", content: prompt }],
             response_format: { type: "json_object" }
         });
 
         const result = JSON.parse(response.choices[0].message.content);
+        console.log('IA sugiere las rutas:', result.routes);
         return result.routes || [];
     } catch (err) {
-        console.error('Error calling OpenAI for routes:', err);
-        return ['/index.html']; // Fallback
+        console.error('Error al consultar rutas a OpenAI:', err);
+        return ['/index.html', '/dashboard.html']; // Fallback seguro
     }
 }
 
@@ -81,34 +85,41 @@ async function captureScreenshots(routes) {
         fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
     }
 
-    console.log(`Starting capture for routes: ${routes.join(', ')}`);
+    console.log(`Iniciando captura de rutas: ${routes.join(', ')}`);
 
     for (const route of routes) {
         const url = `${BASE_URL}${route.startsWith('/') ? '' : '/'}${route}`;
         const timestamp = new Date().getTime();
-        const safeRoute = route.replace(/\//g, '_') || 'home';
+        const safeRoute = route.replace(/\//g, '_').replace('.html', '') || 'home';
         const fileName = `${safeRoute}-${timestamp}.png`;
         const filePath = path.join(SCREENSHOT_DIR, fileName);
 
         try {
-            console.log(`Navigating to ${url}...`);
-            await page.goto(url);
+            console.log(`Visitando: ${url}...`);
+            await page.goto(url, { waitUntil: 'networkidle' });
 
-            // Handle login if we are redirected to index.html/login
-            if (page.url().includes('index.html') || page.url() === `${BASE_URL}/`) {
-                console.log('Login required, authenticating...');
-                await page.fill('#username', 'testuser');
-                await page.fill('#password', 'testpassword');
+            // Detectamos si estamos en la página de login (o redirigidos a ella)
+            const isLoginPage = await page.$('#loginForm');
+
+            if (isLoginPage) {
+                console.log('Login detectado necesario para acceder a la ruta. Autenticando...');
+                await page.fill('#username', 'admin');
+                await page.fill('#password', 'password123');
                 await page.click('#loginBtn');
-                await page.waitForURL(/dashboard.html/, { timeout: 5000 }).catch(() => { });
 
-                // Re-navigate to the original route if it wasn't the login page
-                if (!route.includes('index.html') && route !== '/') {
-                    await page.goto(url);
+                // Esperamos a que la navegación termine
+                await page.waitForNavigation({ waitUntil: 'networkidle' }).catch(() => { });
+
+                // Si la ruta original no era el login, volvemos a ella ahora que ya estamos logueados
+                if (route !== '/index.html' && route !== '/') {
+                    console.log(`Volviendo a la ruta original después del login: ${url}`);
+                    await page.goto(url, { waitUntil: 'networkidle' });
                 }
             }
 
-            await page.waitForLoadState('networkidle');
+            // Pequeña espera extra para asegurar renderizado de animaciones o carga de datos
+            await page.waitForTimeout(1000);
+
             await page.screenshot({ path: filePath, fullPage: true });
 
             capturedImages.push({
@@ -116,9 +127,9 @@ async function captureScreenshots(routes) {
                 path: `docs/images/${fileName}`,
                 url: url
             });
-            console.log(`Screenshot saved: ${fileName}`);
+            console.log(`Screenshot guardado: ${fileName}`);
         } catch (err) {
-            console.error(`Failed to capture ${route}:`, err.message);
+            console.error(`Error al capturar ${route}:`, err.message);
         }
     }
 
@@ -131,9 +142,8 @@ async function run() {
     const routes = await getAutomatedRoutes(changedFiles);
     const images = await captureScreenshots(routes);
 
-    // Save the list of images for the next script
     fs.writeFileSync(path.join(__dirname, 'evidence.json'), JSON.stringify(images, null, 2));
-    console.log('Capture process finished.');
+    console.log('Proceso de captura finalizado.');
 }
 
 run();
