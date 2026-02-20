@@ -20,8 +20,11 @@
   "homepage": "https://github.com/gustavog578/test-project-actions#readme",
   "dependencies": {
     "@playwright/test": "^1.58.2",
+    "axios": "^1.13.5",
     "body-parser": "^2.2.2",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "express-session": "^1.19.0"
+    "express-session": "^1.19.0",
+    "openai": "^6.22.0"
   }
 }

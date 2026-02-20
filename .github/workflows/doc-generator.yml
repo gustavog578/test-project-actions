@@ -1,0 +1,47 @@
+name: AI Documentation & Screens Generator
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  generate-docs:
+    # Evitar loop infinito si el actor es el bot configurado o github-actions
+    if: github.actor != 'doc-bot' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 2 # Necesario para git diff HEAD~1
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Capture Screenshots (AI-driven)
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: node scripts/capture-screens.js
+
+    - name: Generate Technical Documentation (AI-driven)
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: node scripts/generate-doc.js
+
+    - name: Commit and Push Documentation
+      run: |
+        git config --global user.name "gustavog578"
+        git config --global user.email "gustavog578@gmail.com"
+        git add docs/
+        # Solo hacer commit si hay cambios
+        git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto-generated technical documentation [skip ci]" && git push)
