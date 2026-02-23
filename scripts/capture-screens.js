@@ -142,6 +142,42 @@ async function run() {
     const routes = await getAutomatedRoutes(changedFiles);
     const images = await captureScreenshots(routes);
 
+    // Búsqueda de interacciones adicionales para pruebas (Dashboard User Selector)
+    if (routes.includes('/dashboard.html')) {
+        console.log('Realizando interacciones adicionales en Dashboard para pruebas...');
+        const browser = await chromium.launch();
+        const context = await browser.newContext();
+        const page = await context.newPage();
+
+        await page.goto(`${BASE_URL}/index.html`);
+        await page.fill('#username', 'admin');
+        await page.fill('#password', 'password123');
+        await page.click('#loginBtn');
+        await page.waitForNavigation({ waitUntil: 'networkidle' });
+
+        // Seleccionamos ADMIN y capturamos
+        await page.selectOption('#userSelector', 'ADMIN');
+        const adminPath = path.join(SCREENSHOT_DIR, `dashboard-admin-${new Date().getTime()}.png`);
+        await page.screenshot({ path: adminPath, fullPage: true });
+        images.push({
+            route: '/dashboard.html',
+            path: adminPath.replace(path.join(__dirname, '../'), ''),
+            url: `${BASE_URL}/dashboard.html (ADMIN)`
+        });
+
+        // Seleccionamos USER y capturamos
+        await page.selectOption('#userSelector', 'USER');
+        const userPath = path.join(SCREENSHOT_DIR, `dashboard-user-${new Date().getTime()}.png`);
+        await page.screenshot({ path: userPath, fullPage: true });
+        images.push({
+            route: '/dashboard.html',
+            path: userPath.replace(path.join(__dirname, '../'), ''),
+            url: `${BASE_URL}/dashboard.html (USER)`
+        });
+
+        await browser.close();
+    }
+
     fs.writeFileSync(path.join(__dirname, 'evidence.json'), JSON.stringify(images, null, 2));
     console.log('Proceso de captura finalizado.');
 }

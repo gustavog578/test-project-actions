@@ -78,4 +78,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Dashboard Selector Logic
+    const userSelector = document.getElementById('userSelector');
+    const selectedValueMessage = document.getElementById('selectedValueMessage');
+    const selectedUser = document.getElementById('selectedUser');
+
+    if (userSelector) {
+        userSelector.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val) {
+                selectedUser.textContent = val;
+                selectedValueMessage.style.display = 'block';
+            } else {
+                selectedValueMessage.style.display = 'none';
+            }
+        });
+    }
 });

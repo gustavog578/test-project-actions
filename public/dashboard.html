@@ -23,6 +23,18 @@
                 automation.</p>
             <p style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;">The system should detect this change and
                 capture a new screenshot for the deployment report. TEST 2</p>
+
+            <div style="margin-top: 20px;">
+                <label for="userSelector" style="display: block; margin-bottom: 8px;">Select User Context:</label>
+                <select id="userSelector"
+                    style="width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 5px;">
+                    <option value="MasterASP">MasterASP</option>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="USER">USER</option>
+                </select>
+            </div>
+            <p id="selectedValueMessage" style="margin-top: 15px; font-weight: 600; color: #4caf50; display: none;">El
+                usuario seleccionado es: <span id="selectedUser"></span></p>
         </div>
     </div>
     <script src="app.js"></script>
