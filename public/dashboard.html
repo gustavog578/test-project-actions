@@ -15,7 +15,11 @@
     <div class="container dashboard-container">
         <div class="dashboard-header">
             <h1>Dashboard</h1>
-            <button id="logoutBtn" class="logout-btn">Logout</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="logout-btn" style="background-color: #2196F3; border-color: #2196F3;"
+                    onclick="window.location.href='/users.html'">Ver Usuarios</button>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
         </div>
         <p>Welcome, <span id="welcomeUser"></span>!</p>
         <div style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 10px;">
@@ -33,7 +37,7 @@
                     <option value="USER">USER</option>
                 </select>
             </div>
-            <p id="selectedValueMessage" style="margin-top: 15px; font-weight: 600; color: #4caf50; display: none;">El
+            <p id="selectedValueMessage" style="margin-top: 15px; font-weight: 600; color: #cd5418; display: none;">El
                 usuario seleccionado es: <span id="selectedUser"></span></p>
         </div>
     </div>

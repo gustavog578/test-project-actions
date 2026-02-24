@@ -84,6 +84,7 @@ async function generateTechnicalDoc(diff, changedFiles, issueContext) {
     6. Consideraciones de Deploy (Configuraciones necesarias)
     7. Evidencia Visual (Deja un marcador [EVIDENCIA_VISUAL] aquí)
     8. Centrate en los cambios relacionados a la issue, no en todo el codigo.
+    9. Fragmentos de Código (Incluye bloques de código mostrando específicamente las partes del código que cambiaron, usa el diff provisto para extraerlos y mostrar format \`diff\` o similar).
     No incluyas explicaciones fuera del markdown. Sé profesional y técnico.
     `;
 

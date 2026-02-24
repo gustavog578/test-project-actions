@@ -50,6 +50,14 @@ app.get('/api/check-session', (req, res) => {
     }
 });
 
+app.get('/api/users', (req, res) => {
+    if (req.session.loggedIn) {
+        res.json(getUsers());
+    } else {
+        res.status(401).json({ error: 'Unauthorized' });
+    }
+});
+
 app.get('/api/logout', (req, res) => {
     req.session.destroy();
     res.json({ success: true });
