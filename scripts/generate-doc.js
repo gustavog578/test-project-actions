@@ -112,8 +112,11 @@ function insertEvidence(markdown) {
         imagesMarkdown += '*No se capturaron evidencias visuales para este deploy.*';
     } else {
         evidence.forEach(img => {
-            const relativePath = img.path.replace('docs/', '');
-            imagesMarkdown += `### Ruta: ${img.route}\n![Screenshot](${relativePath})\n\n`;
+            // La ruta en evidence.json es docs/issue-X/images/file.png
+            // Como el MD está en docs/issue-X/file.md, la ruta relativa es images/file.png
+            const parts = img.path.split('/');
+            const fileName = parts[parts.length - 1];
+            imagesMarkdown += `### Ruta: ${img.route}\n![Screenshot](images/${fileName})\n\n`;
         });
     }
 
@@ -125,19 +128,23 @@ async function run() {
     const changedFiles = await getChangedFiles();
     const issueContext = await getIssueContext();
 
+    const issueMatch = issueContext.match(/Issue #(\d+)/);
+    const issueFolder = issueMatch ? `issue-${issueMatch[1]}` : 'general';
+    const targetDir = path.join(DOCS_DIR, issueFolder);
+
     let markdown = await generateTechnicalDoc(diff, changedFiles, issueContext);
     markdown = insertEvidence(markdown);
 
-    if (!fs.existsSync(DOCS_DIR)) {
-        fs.mkdirSync(DOCS_DIR, { recursive: true });
+    if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
     }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `deploy-${timestamp}.md`;
-    const filePath = path.join(DOCS_DIR, fileName);
+    const filePath = path.join(targetDir, fileName);
 
     fs.writeFileSync(filePath, markdown);
-    console.log(`Document saved: ${fileName}`);
+    console.log(`Document saved in ${issueFolder}: ${fileName}`);
 }
 
 run();

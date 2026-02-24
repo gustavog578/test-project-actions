@@ -7,7 +7,8 @@ require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const BASE_URL = process.env.CI ? 'http://localhost:3000' : 'https://test-project-actions.vercel.app';
-const SCREENSHOT_DIR = path.join(__dirname, '../docs/images');
+let SCREENSHOT_DIR = path.join(__dirname, '../docs/general/images');
+let ISSUE_FOLDER = 'general';
 
 async function getChangedFiles() {
     try {
@@ -170,7 +171,7 @@ async function captureScreenshots(routes, diff, issueContext) {
 
             capturedImages.push({
                 route: route,
-                path: `docs/images/${fileName}`,
+                path: `docs/${ISSUE_FOLDER}/images/${fileName}`,
                 url: url
             });
             console.log(`Screenshot guardado: ${fileName}`);
@@ -259,7 +260,7 @@ async function captureScreenshots(routes, diff, issueContext) {
 
                         capturedImages.push({
                             route: route,
-                            path: `docs/images/${interactionFileName}`,
+                            path: `docs/${ISSUE_FOLDER}/images/${interactionFileName}`,
                             url: `${url} (${logMsg})`
                         });
                         console.log(`Screenshot de interacción guardado: ${interactionFileName}`);
@@ -277,15 +278,33 @@ async function captureScreenshots(routes, diff, issueContext) {
 }
 
 async function run() {
+    console.log('Detectando contexto de Issue para organizar carpetas...');
     const changedFiles = await getChangedFiles();
     const diff = await getDiff();
     const issueContext = await getIssueContext();
+
+    // Configurar carpetas basadas en la Issue
+    const issueMatch = issueContext.match(/Contexto del Objetivo (Issue #\d+)/) || issueContext.match(/#(\d+)/);
+    if (issueMatch) {
+        const issueId = issueMatch[1].replace('Issue #', '');
+        ISSUE_FOLDER = `issue-${issueId}`;
+        SCREENSHOT_DIR = path.join(__dirname, `../docs/${ISSUE_FOLDER}/images`);
+        console.log(`Organizando capturas en: ${ISSUE_FOLDER}`);
+    } else {
+        console.log('No se detectó Issue específica. Usando carpeta /general');
+    }
+
     const routes = await getAutomatedRoutes(changedFiles, issueContext);
 
     console.log('Iniciando captura dinámica...');
     const images = await captureScreenshots(routes, diff, issueContext);
 
-    fs.writeFileSync(path.join(__dirname, 'evidence.json'), JSON.stringify(images, null, 2));
+    if (!fs.existsSync(path.join(__dirname, 'evidence.json'))) {
+        fs.writeFileSync(path.join(__dirname, 'evidence.json'), JSON.stringify(images, null, 2));
+    } else {
+        // Podríamos querer mergear si hay múltiples runs, pero por ahora sobreescribimos
+        fs.writeFileSync(path.join(__dirname, 'evidence.json'), JSON.stringify(images, null, 2));
+    }
     console.log('Proceso de captura finalizado.');
 }
 
