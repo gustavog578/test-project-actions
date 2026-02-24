@@ -45,6 +45,7 @@ jobs:
     - name: Capture Screenshots (AI-driven)
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: node scripts/capture-screens.js
 
     - name: Generate Technical Documentation (AI-driven)
