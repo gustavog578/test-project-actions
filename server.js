@@ -18,8 +18,7 @@ app.use(session({
 }));
 
 // Static files
-app.use(express.static(path.join(__dirname, 'public')));
-
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 // Mock Database (local file)
 const getUsers = () => {
     const data = fs.readFileSync(path.join(__dirname, 'users.json'), 'utf8');
