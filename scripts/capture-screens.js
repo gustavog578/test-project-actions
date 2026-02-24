@@ -75,7 +75,15 @@ async function getAutomatedRoutes(changedFiles) {
     }
 }
 
-async function captureScreenshots(routes) {
+async function getDiff() {
+    try {
+        return execSync('git diff HEAD~1 HEAD').toString();
+    } catch (err) {
+        return '';
+    }
+}
+
+async function captureScreenshots(routes, diff) {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -128,6 +136,86 @@ async function captureScreenshots(routes) {
                 url: url
             });
             console.log(`Screenshot guardado: ${fileName}`);
+
+            // === IA DINÁMICA DE INTERACCIÓN ===
+            if (diff && diff.length > 5) {
+                console.log('Analizando elementos interactivos con IA para buscar comportamientos añadidos...');
+
+                const elements = await page.evaluate(() => {
+                    const interactables = document.querySelectorAll('button, a, select, input[type="button"], input[type="submit"]');
+                    const list = [];
+                    let index = 0;
+                    interactables.forEach(el => {
+                        if (el.offsetWidth === 0 || el.offsetHeight === 0) return;
+                        const aiId = `ai-elem-${index++}`;
+                        el.setAttribute('data-ai-id', aiId);
+                        let label = el.innerText || el.value || el.name || el.id || el.placeholder || '';
+                        label = label.trim().substring(0, 50);
+                        if (label) list.push({ aiId, tag: el.tagName.toLowerCase(), label });
+                    });
+                    return list;
+                });
+
+                if (elements.length > 0) {
+                    const prompt = `
+                    Eres un experto QA automatizado.
+                    Cambio en el código fuente:
+                    ${diff.substring(0, 2000)}
+
+                    Ruta actual web: ${route}
+                    Elementos interactivos disponibles:
+                    ${JSON.stringify(elements)}
+
+                    Basado en el diff, ¿hay algún elemento con el que se deba interactuar (como hacer click en un botón recién añadido, o cambiar un select) para revelar visualmente la nueva funcionalidad introducida por este commit?
+                    
+                    Responde únicamente con un JSON array de las acciones a realizar. Si no aplican acciones, responde array vacío.
+                    Formato esperado JSON:
+                    {
+                      "actions": [
+                        { "targetId": "ai-elem-X", "action": "click" }
+                      ]
+                    }
+                    (La acción puede ser 'click' o 'select').
+                    `;
+
+                    const aiRes = await openai.chat.completions.create({
+                        model: "gpt-4o",
+                        messages: [{ role: "system", content: "Solo produces JSON puro." }, { role: "user", content: prompt }],
+                        response_format: { type: "json_object" }
+                    });
+
+                    const actions = JSON.parse(aiRes.choices[0].message.content).actions || [];
+
+                    if (actions.length > 0) {
+                        for (const action of actions) {
+                            console.log(`Ejecutando acción de IA: ${action.action} sobre [data-ai-id="${action.targetId}"]`);
+                            try {
+                                const selector = `[data-ai-id="${action.targetId}"]`;
+                                if (action.action === 'click') {
+                                    await page.click(selector);
+                                } else if (action.action === 'select') {
+                                    await page.selectOption(selector, { index: 1 });
+                                }
+                                await page.waitForTimeout(600);
+                            } catch (e) {
+                                console.error('Fallo al ejecutar la acción AI:', e.message);
+                            }
+                        }
+
+                        const interactionFileName = `${safeRoute}-interacted-${timestamp}.png`;
+                        const interactionFilePath = path.join(SCREENSHOT_DIR, interactionFileName);
+                        await page.screenshot({ path: interactionFilePath, fullPage: true });
+
+                        capturedImages.push({
+                            route: route,
+                            path: `docs/images/${interactionFileName}`,
+                            url: `${url} (Interacción AI)`
+                        });
+                        console.log(`Screenshot inteligente guardado: ${interactionFileName}`);
+                    }
+                }
+            }
+
         } catch (err) {
             console.error(`Error al capturar ${route}:`, err.message);
         }
@@ -139,44 +227,11 @@ async function captureScreenshots(routes) {
 
 async function run() {
     const changedFiles = await getChangedFiles();
+    const diff = await getDiff();
     const routes = await getAutomatedRoutes(changedFiles);
-    const images = await captureScreenshots(routes);
 
-    // Búsqueda de interacciones adicionales para pruebas (Dashboard User Selector)
-    if (routes.includes('/dashboard.html')) {
-        console.log('Realizando interacciones adicionales en Dashboard para pruebas...');
-        const browser = await chromium.launch();
-        const context = await browser.newContext();
-        const page = await context.newPage();
-
-        await page.goto(`${BASE_URL}/index.html`);
-        await page.fill('#username', 'admin');
-        await page.fill('#password', 'password123');
-        await page.click('#loginBtn');
-        await page.waitForNavigation({ waitUntil: 'networkidle' });
-
-        // Seleccionamos ADMIN y capturamos
-        await page.selectOption('#userSelector', 'ADMIN');
-        const adminPath = path.join(SCREENSHOT_DIR, `dashboard-admin-${new Date().getTime()}.png`);
-        await page.screenshot({ path: adminPath, fullPage: true });
-        images.push({
-            route: '/dashboard.html',
-            path: adminPath.replace(path.join(__dirname, '../'), ''),
-            url: `${BASE_URL}/dashboard.html (ADMIN)`
-        });
-
-        // Seleccionamos USER y capturamos
-        await page.selectOption('#userSelector', 'USER');
-        const userPath = path.join(SCREENSHOT_DIR, `dashboard-user-${new Date().getTime()}.png`);
-        await page.screenshot({ path: userPath, fullPage: true });
-        images.push({
-            route: '/dashboard.html',
-            path: userPath.replace(path.join(__dirname, '../'), ''),
-            url: `${BASE_URL}/dashboard.html (USER)`
-        });
-
-        await browser.close();
-    }
+    console.log('Iniciando captura dinámica...');
+    const images = await captureScreenshots(routes, diff);
 
     fs.writeFileSync(path.join(__dirname, 'evidence.json'), JSON.stringify(images, null, 2));
     console.log('Proceso de captura finalizado.');
