@@ -45,7 +45,7 @@ async function getIssueContext() {
         if (issueId) {
             const issueData = execSync(`gh issue view ${issueId} --json title,body`).toString();
             const { title, body } = JSON.parse(issueData);
-            return `Goal/Context: ${title} - ${body}`;
+            return `Contexto del Issue #${issueId}: ${title} - ${body}`;
         }
     } catch (err) { }
     return '';
@@ -284,14 +284,15 @@ async function run() {
     const issueContext = await getIssueContext();
 
     // Configurar carpetas basadas en la Issue
-    const issueMatch = issueContext.match(/Contexto del Objetivo (Issue #\d+)/) || issueContext.match(/#(\d+)/);
+    const issueMatch = issueContext.match(/Issue #(\d+)/);
     if (issueMatch) {
-        const issueId = issueMatch[1].replace('Issue #', '');
+        const issueId = issueMatch[1];
         ISSUE_FOLDER = `issue-${issueId}`;
         SCREENSHOT_DIR = path.join(__dirname, `../docs/${ISSUE_FOLDER}/images`);
         console.log(`Organizando capturas en: ${ISSUE_FOLDER}`);
     } else {
         console.log('No se detectó Issue específica. Usando carpeta /general');
+        SCREENSHOT_DIR = path.join(__dirname, '../docs/general/images');
     }
 
     const routes = await getAutomatedRoutes(changedFiles, issueContext);
