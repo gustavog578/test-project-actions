@@ -72,11 +72,13 @@ async function getAutomatedRoutes(changedFiles, issueContext) {
     Archivos que han cambiado en este commit:
     ${changedFiles.join(', ')}
     
-    Tu tarea es determinar qué rutas de la aplicación deben ser capturadas para mostrar los cambios. 
-    Ten en cuenta que:
-    1. Si un archivo .html ha cambiado, su ruta es obligatoria.
-    2. Si el cambio es en JS/Server o el Contexto de la Issue sugiere una funcionalidad (ej: Gestión de Usuarios), debes incluir las rutas relacionadas (ej: /users) incluso si el HTML no cambió en este commit específico.
-    3. La URL base es ${BASE_URL}.
+    Tu tarea es determinar qué rutas de la aplicación deben ser capturadas para EXPLICAR al cliente los cambios relacionados con el OBJETIVO (Issue). 
+    
+    TEN EN CUENTA QUE:
+    1. El objetivo principal actual es: "${issueContext}".
+    2. Debes sugerir rutas que permitan ver esta funcionalidad en acción (ej. si el objetivo es "Gestión de Usuarios", DEBES incluir la ruta donde se listan los usuarios, como /users).
+    3. No te limites solo a los archivos que han cambiado en este commit específico; piensa en la funcionalidad global descrita en el Objetivo si el commit solo parece ser un arreglo técnico.
+    4. El servidor de Express está configurado para servir los archivos de /public sin la extensión (ej: /users).
     
     Devuelve únicamente un JSON válido con este formato:
     {
@@ -202,27 +204,31 @@ async function captureScreenshots(routes, diff, issueContext) {
                     Elementos interactivos disponibles:
                     ${JSON.stringify(elements)}
 
-                    Basado en el diff Y el contexto del Objetivo (Issue), ¿hay algún elemento con el que se deba interactuar para revelar visualmente la funcionalidad (ej: abrir modales, cambiar selects)?
+                    Basado en el OBJETIVO de la tarea y el estado actual de la pantalla, ¿qué acciones deberíamos realizar para MOSTRAR la funcionalidad al usuario (ej: hacer click en un botón de "Ver contraseña", abrir un modal, etc.)?
                     
-                    RESUMEN DE CAMBIOS EN ESTE COMMIT:
+                    OBJETIVO DE LA TAREA:
+                    ${issueContext}
+
+                    CAMBIOS TÉCNICOS (Diff):
                     ${diff.substring(0, 2000)}
 
                     RUTA ACTUAL: ${route}
-                    CONTEXTO GLOBAL DE LA TAREA:
-                    ${issueContext}
+                    BOTONES/ELEMENTOS EN PANTALLA:
+                    ${JSON.stringify(elements)}
 
-                    Responde únicamente con un JSON válido con este formato:
+                    INSTRUCCIÓN: Prioriza el OBJETIVO. Si el objetivo es mostrar contraseñas y ves un botón que dice "Ver contraseña", DEBES clicarlo.
+                    
+                    Responde únicamente con un JSON válido:
                     {
                       "actions": [
-                        { "targetId": "ai-elem-X", "action": "click" }
+                        { "targetId": "ai-elem-X", "action": "click", "reason": "Breve explicación de por qué" }
                       ]
                     }
-                    Si no hay acciones relevantes, devuelve "actions": [].
                     `;
 
                     const aiRes = await openai.chat.completions.create({
                         model: "gpt-4o",
-                        messages: [{ role: "system", content: "Solo produces JSON puro." }, { role: "user", content: prompt }],
+                        messages: [{ role: "system", content: "Solo produces JSON para automatización de Playwright." }, { role: "user", content: prompt }],
                         response_format: { type: "json_object" }
                     });
 
@@ -230,7 +236,8 @@ async function captureScreenshots(routes, diff, issueContext) {
 
                     if (actions.length > 0) {
                         for (const action of actions) {
-                            console.log(`Ejecutando acción de IA: ${action.action} sobre [data-ai-id="${action.targetId}"]`);
+                            console.log(`[AI DECISION]: ${action.reason}`);
+                            console.log(`Ejecutando: ${action.action} sobre ${action.targetId}`);
                             try {
                                 const selector = `[data-ai-id="${action.targetId}"]`;
                                 if (action.action === 'click') {
@@ -238,22 +245,24 @@ async function captureScreenshots(routes, diff, issueContext) {
                                 } else if (action.action === 'select') {
                                     await page.selectOption(selector, { index: 1 });
                                 }
-                                await page.waitForTimeout(600);
+                                await page.waitForTimeout(800); // Esperar un poco más por modales
                             } catch (e) {
                                 console.error('Fallo al ejecutar la acción AI:', e.message);
                             }
                         }
 
-                        const interactionFileName = `${safeRoute}-interacted-${timestamp}.png`;
+                        // Tomar screenshot de la interacción
+                        const logMsg = actions.map(a => a.reason).join(', ');
+                        const interactionFileName = `${safeRoute}-interaction-${timestamp}.png`;
                         const interactionFilePath = path.join(SCREENSHOT_DIR, interactionFileName);
                         await page.screenshot({ path: interactionFilePath, fullPage: true });
 
                         capturedImages.push({
                             route: route,
                             path: `docs/images/${interactionFileName}`,
-                            url: `${url} (Interacción AI)`
+                            url: `${url} (${logMsg})`
                         });
-                        console.log(`Screenshot inteligente guardado: ${interactionFileName}`);
+                        console.log(`Screenshot de interacción guardado: ${interactionFileName}`);
                     }
                 }
             }
