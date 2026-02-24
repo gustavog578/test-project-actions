@@ -158,6 +158,12 @@ async function captureScreenshots(routes, diff, issueContext) {
             // Pequeña espera extra para asegurar renderizado de animaciones o carga de datos
             await page.waitForTimeout(1000);
 
+            // Si es la página de usuarios, esperamos específicamente a que carguen los botones dinámicos
+            if (route.includes('users')) {
+                console.log('Esperando carga de tabla de usuarios...');
+                await page.waitForSelector('.btn-view', { timeout: 5000 }).catch(() => console.log('No se encontraron botones .btn-view tras esperar'));
+            }
+
             await page.screenshot({ path: filePath, fullPage: true });
 
             capturedImages.push({
@@ -198,12 +204,20 @@ async function captureScreenshots(routes, diff, issueContext) {
 
                     Basado en el diff Y el contexto del Objetivo (Issue), ¿hay algún elemento con el que se deba interactuar para revelar visualmente la funcionalidad (ej: abrir modales, cambiar selects)?
                     
-                    Contexto del Objetivo:
-                    ${issueContext}
-
-                    Cambio en el código (Diff):
+                    RESUMEN DE CAMBIOS EN ESTE COMMIT:
                     ${diff.substring(0, 2000)}
 
+                    RUTA ACTUAL: ${route}
+                    CONTEXTO GLOBAL DE LA TAREA:
+                    ${issueContext}
+
+                    Responde únicamente con un JSON válido con este formato:
+                    {
+                      "actions": [
+                        { "targetId": "ai-elem-X", "action": "click" }
+                      ]
+                    }
+                    Si no hay acciones relevantes, devuelve "actions": [].
                     `;
 
                     const aiRes = await openai.chat.completions.create({
