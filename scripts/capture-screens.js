@@ -27,8 +27,34 @@ async function getFileContent(filePath) {
     return '';
 }
 
-async function getAutomatedRoutes(changedFiles) {
+async function getIssueContext() {
+    console.log('Extracting issue context...');
+    try {
+        const commitMsg = execSync('git log -1 --pretty=%B').toString();
+        const branchName = execSync('git rev-parse --abbrev-ref HEAD').toString();
+        let issueId = null;
+        const commitMatch = commitMsg.match(/#(\d+)/);
+        if (commitMatch) {
+            issueId = commitMatch[1];
+        } else {
+            const branchMatch = branchName.match(/(?:issue|#)?(\d+)/i);
+            if (branchMatch) issueId = branchMatch[1];
+        }
+
+        if (issueId) {
+            const issueData = execSync(`gh issue view ${issueId} --json title,body`).toString();
+            const { title, body } = JSON.parse(issueData);
+            return `Goal/Context: ${title} - ${body}`;
+        }
+    } catch (err) { }
+    return '';
+}
+
+async function getAutomatedRoutes(changedFiles, issueContext) {
     console.log('Detecting routes affected by changes...');
+
+    // Listar todos los archivos HTML disponibles para que la IA sepa qué existe
+    const allFiles = fs.readdirSync(path.join(__dirname, '../public')).filter(f => f.endsWith('.html'));
 
     // Simplificamos: enviamos la lista de archivos y pedimos a la IA que deduzca la ruta pública.
     const prompt = `
@@ -36,16 +62,21 @@ async function getAutomatedRoutes(changedFiles) {
     
     Estructura del Proyecto:
     - /public/: Contiene todos los archivos estáticos HTML.
-    - El servidor sirve los archivos de /public sin necesidad de extensión .html.
+    
+    Archivos HTML disponibles:
+    ${allFiles.join(', ')}
+
+    Contexto del Objetivo (Issue):
+    ${issueContext || 'No context available'}
     
     Archivos que han cambiado en este commit:
     ${changedFiles.join(', ')}
     
     Tu tarea es determinar qué rutas de la aplicación deben ser capturadas para mostrar los cambios. 
     Ten en cuenta que:
-    1. Si un archivo .html en /public/ ha cambiado, esa es una ruta obligatoria (ej: /public/users.html -> /users).
-    2. Si cambian archivos de JS, CSS o server, asume que tanto '/index', '/dashboard' como otras rutas principales pueden verse afectadas.
-    4. La URL base es ${BASE_URL}.
+    1. Si un archivo .html ha cambiado, su ruta es obligatoria.
+    2. Si el cambio es en JS/Server o el Contexto de la Issue sugiere una funcionalidad (ej: Gestión de Usuarios), debes incluir las rutas relacionadas (ej: /users) incluso si el HTML no cambió en este commit específico.
+    3. La URL base es ${BASE_URL}.
     
     Devuelve únicamente un JSON válido con este formato:
     {
@@ -75,13 +106,14 @@ async function getAutomatedRoutes(changedFiles) {
 
 async function getDiff() {
     try {
+        // Obtenemos un diff más amplio si es necesario, o al menos el del último commit
         return execSync('git diff HEAD~1 HEAD').toString();
     } catch (err) {
         return '';
     }
 }
 
-async function captureScreenshots(routes, diff) {
+async function captureScreenshots(routes, diff, issueContext) {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -164,16 +196,14 @@ async function captureScreenshots(routes, diff) {
                     Elementos interactivos disponibles:
                     ${JSON.stringify(elements)}
 
-                    Basado en el diff, ¿hay algún elemento con el que se deba interactuar (como hacer click en un botón recién añadido, o cambiar un select) para revelar visualmente la nueva funcionalidad introducida por este commit?
+                    Basado en el diff Y el contexto del Objetivo (Issue), ¿hay algún elemento con el que se deba interactuar para revelar visualmente la funcionalidad (ej: abrir modales, cambiar selects)?
                     
-                    Responde únicamente con un JSON array de las acciones a realizar. Si no aplican acciones, responde array vacío.
-                    Formato esperado JSON:
-                    {
-                      "actions": [
-                        { "targetId": "ai-elem-X", "action": "click" }
-                      ]
-                    }
-                    (La acción puede ser 'click' o 'select').
+                    Contexto del Objetivo:
+                    ${issueContext}
+
+                    Cambio en el código (Diff):
+                    ${diff.substring(0, 2000)}
+
                     `;
 
                     const aiRes = await openai.chat.completions.create({
@@ -226,10 +256,11 @@ async function captureScreenshots(routes, diff) {
 async function run() {
     const changedFiles = await getChangedFiles();
     const diff = await getDiff();
-    const routes = await getAutomatedRoutes(changedFiles);
+    const issueContext = await getIssueContext();
+    const routes = await getAutomatedRoutes(changedFiles, issueContext);
 
     console.log('Iniciando captura dinámica...');
-    const images = await captureScreenshots(routes, diff);
+    const images = await captureScreenshots(routes, diff, issueContext);
 
     fs.writeFileSync(path.join(__dirname, 'evidence.json'), JSON.stringify(images, null, 2));
     console.log('Proceso de captura finalizado.');
