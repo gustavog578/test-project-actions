@@ -6,7 +6,7 @@ const path = require('path');
 require('dotenv').config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const BASE_URL = 'https://test-project-actions.vercel.app';
+const BASE_URL = process.env.CI ? 'http://localhost:3000' : 'https://test-project-actions.vercel.app';
 const SCREENSHOT_DIR = path.join(__dirname, '../docs/images');
 
 async function getChangedFiles() {
@@ -35,18 +35,16 @@ async function getAutomatedRoutes(changedFiles) {
     Eres un experto en desarrollo web y automatización con Playwright.
     
     Estructura del Proyecto:
-    - /public/index.html: Página de Login.
-    - /public/dashboard.html: Panel de control (Dashboard) - Requiere login previo.
-    - /public/app.js: Lógica cliente y navegación.
+    - /public/: Contiene todos los archivos estáticos HTML.
+    - El servidor sirve los archivos de /public sin necesidad de extensión .html.
     
     Archivos que han cambiado en este commit:
     ${changedFiles.join(', ')}
     
     Tu tarea es determinar qué rutas de la aplicación deben ser capturadas para mostrar los cambios. 
     Ten en cuenta que:
-    1. Si cambia algo en 'dashboard.html', la ruta es '/dashboard.html'.
-    2. Si cambia algo en 'index.html', la ruta es '/index.html'.
-    3. Si cambian archivos de lógica (js), CSS o el servidor, asume que tanto '/index.html' como '/dashboard.html' podrían verse afectados.
+    1. Si un archivo .html en /public/ ha cambiado, esa es una ruta obligatoria (ej: /public/users.html -> /users).
+    2. Si cambian archivos de JS, CSS o server, asume que tanto '/index', '/dashboard' como otras rutas principales pueden verse afectadas.
     4. La URL base es ${BASE_URL}.
     
     Devuelve únicamente un JSON válido con este formato:

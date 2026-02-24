@@ -112,7 +112,8 @@ function insertEvidence(markdown) {
         imagesMarkdown += '*No se capturaron evidencias visuales para este deploy.*';
     } else {
         evidence.forEach(img => {
-            imagesMarkdown += `### Ruta: ${img.route}\n![Screenshot](${img.path})\n\n`;
+            const relativePath = img.path.replace('docs/', '');
+            imagesMarkdown += `### Ruta: ${img.route}\n![Screenshot](${relativePath})\n\n`;
         });
     }
 
