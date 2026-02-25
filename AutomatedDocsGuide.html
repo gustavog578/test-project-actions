@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Guía del Sistema de Documentación IA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 12px;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #2980b9;
+            margin-top: 40px;
+            border-left: 6px solid #3498db;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #16a085;
+            margin-top: 25px;
+        }
+
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+        }
+
+        .note {
+            background-color: #e8f6f3;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 5px solid #1abc9c;
+            margin: 25px 0;
+        }
+
+        .warning {
+            background-color: #fdf2e9;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 5px solid #e67e22;
+            margin: 25px 0;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Manual de Usuario: Pipeline de Documentación Automatizada</h1>
+
+    <p>Este sistema transforma el proceso de documentación técnica en un flujo pasivo y automatizado, asegurando que
+        cada cambio visual en el producto quede registrado sin intervención humana directa.</p>
+
+    <h2>1. Las 3 Piezas del Motor</h2>
+    <p>El sistema operando en GitHub Actions ejecuta tres procesos críticos:</p>
+    <ul>
+        <li><strong>Captura (Playwright + IA)</strong>: Emula a un usuario, navega por las rutas afectadas y realiza
+            acciones dinámicas (clicks, selección de menús) para revelar la funcionalidad oculta.</li>
+        <li><strong>Redacción (OpenAI GPT-4o)</strong>: Interpreta el código fuente y el contexto humano del ticket para
+            escribir un informe técnico de alta calidad.</li>
+        <li><strong>Persistencia</strong>: Guarda los hallazgos en carpetas organizadas por Issue ID para mantener el
+            orden histórico.</li>
+    </ul>
+
+    <div class="note">
+        <h3>💡 Flujo Diario para Desarrolladores</h3>
+        <ol>
+            <li><strong>Commits con Contexto</strong>: Incluye siempre el <code>#ID</code> de la issue en tu mensaje de
+                commit.</li>
+            <li><strong>Sincronización Previa</strong>: Antes de trabajar, haz un
+                <code>git pull --rebase origin main</code>. Esto es vital porque el bot genera commits automáticos de
+                documentación.
+            </li>
+            <li><strong>Validación</strong>: Revisa la carpeta <code>/docs</code> después de cada push exitoso para
+                validar la evidencia.</li>
+        </ol>
+    </div>
+
+    <h2>2. Organización de Archivos</h2>
+    <p>La estructura de carpetas está diseñada para la escalabilidad:</p>
+    <pre>
+/docs
+  /issue-2
+    /images
+      dashboard-action-174000.png  <-- Fotos del ticket 2
+    deploy-2026-02-24.md           <-- Doc del ticket 2
+  /general
+    /images                        <-- Fotos sin ticket asociado
+    deploy-info.md                 <-- Doc general
+    </pre>
+
+    <div class="warning">
+        <h3>⚠️ ¡Atención con los Conflictos!</h3>
+        <p>Como el sistema es un "miembro más" del equipo que hace commits en <code>main</code>, si olvidas hacer
+            <strong>rebase</strong>, podrías tener conflictos de Git al intentar subir tu código. Si esto sucede,
+            resuelve el conflicto favoreciendo tus cambios de código sobre los documentos del bot, y vuelve a pushear.
+        </p>
+    </div>
+
+    <h2>3. Configuración de Seguridad (Github Secrets)</h2>
+    <p>Para que el sistema respire, necesita:</p>
+    <ul>
+        <li><code>OPENAI_API_KEY</code>: Token de acceso a la API de OpenAI.</li>
+        <li><code>GITHUB_TOKEN</code>: Permisos de lectura de Issues y escritura de contenido (configurado en el archivo
+            YAML).</li>
+    </ul>
+
+</body>
+
+</html>

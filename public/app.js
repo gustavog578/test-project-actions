@@ -11,19 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/check-session');
             const data = await res.json();
 
-            const isDashboard = window.location.pathname.includes('dashboard.html');
+            const isDashboard = window.location.pathname.includes('dashboard.html') || window.location.pathname.includes('/dashboard');
             const isIndex = window.location.pathname.includes('index.html') || window.location.pathname === '/';
 
             if (data.loggedIn) {
                 if (isIndex) {
-                    window.location.href = '/dashboard.html';
+                    window.location.href = '/dashboard';
                 }
                 if (welcomeUser) {
                     welcomeUser.textContent = data.username;
                 }
             } else {
                 if (isDashboard) {
-                    window.location.href = '/index.html';
+                    window.location.href = '/';
                 }
             }
         } catch (err) {
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (data.success) {
-                    window.location.href = '/dashboard.html';
+                    window.location.href = '/dashboard';
                 } else {
                     errorMessage.textContent = data.message || 'Login failed';
                 }
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', async () => {
             try {
                 await fetch('/api/logout');
-                window.location.href = '/index.html';
+                window.location.href = '/';
             } catch (err) {
                 console.error('Logout failed', err);
             }

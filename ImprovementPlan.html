@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Plan de Mejora - Documentación IA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+
+        h3 {
+            color: #16a085;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .feature {
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 5px solid #3498db;
+            margin: 10px 0;
+        }
+
+        .highlight {
+            color: #e67e22;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Plan de Mejora: Escalabilidad de Documentación Automatizada</h1>
+
+    <p>Este documento describe la estrategia para evolucionar el pipeline de documentación IA hacia una arquitectura
+        robusta y escalable para proyectos de gran envergadura.</p>
+
+    <h2>1. Alcance Estratégico</h2>
+
+    <div class="feature">
+        <h3>A. Análisis Dinámico (Angular & NestJS)</h3>
+        <p>Mapeo automático de <strong>@Controllers</strong> en NestJS y <strong>Routes/Components</strong> en Angular.
+            La IA identifica el impacto cruzado entre el cambio en la API (backend) y su representación en el componente
+            de UI (frontend).</p>
+    </div>
+
+    <div class="feature">
+        <h3>B. Contexto de Inyección de Dependencias</h3>
+        <p>Suministro de metadatos de Módulos (NestJS) y Components (Angular). La IA comprende cómo un cambio en un
+            <code>Service</code> de negocio se propaga a través de los diversos módulos del sistema.
+        </p>
+    </div>
+
+    <div class="feature">
+        <h3>C. Contexto Arquitectónico</h3>
+        <p>Inclusión automática de archivos maestros (README, package.json, routes.js) para que la IA comprenda las
+            reglas de negocio y no solo el cambio individual.</p>
+    </div>
+
+    <h2>2. Desafíos Técnicos y Soluciones</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Desafío</th>
+                <th>Impacto</th>
+                <th>Solución Propuesta</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Límite de Tokens</td>
+                <td>Alto</td>
+                <td>Uso de fragmentación de código dinámico basado en relevancia.</td>
+            </tr>
+            <tr>
+                <td>Costos de API</td>
+                <td>Moderado</td>
+                <td>Caché de respuestas y uso de modelos híbridos (GPT-4o / GPT-3.5).</td>
+            </tr>
+            <tr>
+                <td>Falsos Positivos</td>
+                <td>Bajo</td>
+                <td>Refinamiento de prompts con instrucciones de prioridad de negocio.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>3. Hoja de Ruta Propuesta</h2>
+    <ul>
+        <li><strong>Fase 1</strong>: Integración de contexto global (README) y mapeo de dependencias básico.</li>
+        <li><strong>Fase 2</strong>: Implementación de historial narrativo y detección de Feature Branches.</li>
+        <li><strong>Fase 3</strong>: Automatización total con validación de estados UI complejos (RAG).</li>
+    </ul>
+
+    <p style="margin-top: 50px; font-style: italic; color: #7f8c8d;">Generado automáticamente por Antigravity - 2026</p>
+</body>
+
+</html>

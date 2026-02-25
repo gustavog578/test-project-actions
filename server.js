@@ -8,13 +8,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.set('trust proxy', 1);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
     secret: 'secret-key-for-test',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // Set to true if using https
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', // Set to true if using https in production
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    }
 }));
 
 // Static files

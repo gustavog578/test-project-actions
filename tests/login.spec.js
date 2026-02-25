@@ -15,7 +15,7 @@ test.describe('Login Flow', () => {
         await page.click('#loginBtn');
 
         // Should redirect to dashboard
-        await expect(page).toHaveURL(/.*dashboard.html/);
+        await expect(page).toHaveURL(/.*dashboard/);
         await expect(page.locator('#welcomeUser')).toHaveText('admin');
     });
 
@@ -36,7 +36,7 @@ test.describe('Login Flow', () => {
         await page.fill('#username', 'admin');
         await page.fill('#password', 'password123');
         await page.click('#loginBtn');
-        await expect(page).toHaveURL(/.*dashboard.html/);
+        await expect(page).toHaveURL(/.*dashboard/);
 
         // Click logout
         await page.click('#logoutBtn');
