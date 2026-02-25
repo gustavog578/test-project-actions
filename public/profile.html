@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Test Project</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .profile-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 20px;
+            border: 1px solid #444;
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            color: #aaa;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 1.2rem;
+            color: white;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container dashboard-container" style="max-width: 600px;">
+        <div class="dashboard-header">
+            <h1>Mi Perfil</h1>
+            <button class="logout-btn" style="background-color: #555; border-color: #555;"
+                onclick="window.location.href='/dashboard'">Volver al Dashboard</button>
+        </div>
+
+        <div class="profile-card">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 100px; height: 100px; background: #cd5418; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 3rem; color: white;"
+                    id="profileAvatar">
+                    ?
+                </div>
+            </div>
+
+            <div class="profile-info">
+                <div class="info-group">
+                    <span class="info-label">Nombre de Usuario</span>
+                    <span class="info-value" id="profileUsername">Cargando...</span>
+                </div>
+                <!-- Extendable for future fields like role, email, etc. -->
+            </div>
+        </div>
+    </div>
+
+    <script src="profile.js"></script>
+</body>
+
+</html>
