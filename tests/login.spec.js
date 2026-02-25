@@ -42,6 +42,6 @@ test.describe('Login Flow', () => {
         await page.click('#logoutBtn');
 
         // Should redirect back to login
-        await expect(page).toHaveURL(/.*index.html/);
+        await expect(page).toHaveURL(/^http:\/\/localhost:\d+\/$/);
     });
 });
