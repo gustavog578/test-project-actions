@@ -61,6 +61,22 @@ app.get('/api/users', (req, res) => {
     }
 });
 
+app.get('/api/profile', (req, res) => {
+    if (req.session.loggedIn) {
+        const users = getUsers();
+        // Don't send the password back to the client
+        const user = users.find(u => u.username === req.session.username);
+        if (user) {
+            const { password, ...userProfile } = user;
+            res.json(userProfile);
+        } else {
+            res.status(404).json({ error: 'User not found' });
+        }
+    } else {
+        res.status(401).json({ error: 'Unauthorized' });
+    }
+});
+
 app.get('/api/logout', (req, res) => {
     req.session.destroy();
     res.json({ success: true });
